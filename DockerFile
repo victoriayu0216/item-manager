@@ -1,20 +1,20 @@
-# 使用 Node.js 20 官方輕量版 Image
-FROM node:20-slim
+FROM node:22-alpine
 
-# 設定工作目錄
+# 安裝編譯工具（Alpine 用 apk）
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# 複製 package.json 同 package-lock.json（先複製呢兩個，善用 Docker Cache）
+# 複製 package.json 同 package-lock.json
 COPY package*.json ./
 
-# 安裝依賴
+# 強制由 Source 編譯 better-sqlite3
+ENV npm_config_better_sqlite3_build_from_source=true
 RUN npm install
 
-# 複製其餘所有原始碼
+# 複製其餘原始碼
 COPY . .
 
-# 開放 5174 Port（你 Item Manager 用嘅 Port）
 EXPOSE 5174
 
-# 啟動指令
 CMD ["node", "src/server.js"]

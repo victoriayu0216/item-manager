@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  item-manager:
+    build: .
+    container_name: item-manager
+    ports:
+      - "5174:5174"
+    volumes:
+      # 將 database 持久化喺 host，就算 container 消失都唔會冇咗 data
+      - ./data:/app/data
+    restart: unless-stopped

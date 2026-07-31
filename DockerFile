@@ -1,0 +1,20 @@
+# 使用 Node.js 20 官方輕量版 Image
+FROM node:20-slim
+
+# 設定工作目錄
+WORKDIR /app
+
+# 複製 package.json 同 package-lock.json（先複製呢兩個，善用 Docker Cache）
+COPY package*.json ./
+
+# 安裝依賴
+RUN npm install
+
+# 複製其餘所有原始碼
+COPY . .
+
+# 開放 5174 Port（你 Item Manager 用嘅 Port）
+EXPOSE 5174
+
+# 啟動指令
+CMD ["node", "src/server.js"]

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Item Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="side">
+      <div class="brand">Item<span> Manager</span></div>
+      <div class="nav">
+        <button id="nav-items" class="active" onclick="showItems()">📋 All Items</button>
+        <button onclick="openItemModal(null)">➕ Add Item</button>
+      </div>
+      <div class="side-foot">
+        <div id="stat"></div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main">
+      <div class="topbar">
+        <h1 id="title">Items</h1>
+        <div class="spacer"></div>
+        <div class="search" id="searchWrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m21 21-4-4"/>
+          </svg>
+          <input id="search" placeholder="Search by Uni Key, Item Name or Bill ID…" oninput="searchItems()" />
+        </div>
+      </div>
+      <div class="content" id="view"></div>
+    </main>
+  </div>
+
+  <!-- ===== MODAL (共用彈窗) ===== -->
+  <div class="ovl" id="ovl">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

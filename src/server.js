@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import db from './db.js';
-import { getItems, getItem, createItem, updateItem, deleteItem, exportItems } from './routes/items.js';
+import { getItems, getItem, createItem, updateItem, deleteItem, exportItems } from './items.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();

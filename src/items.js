@@ -1,5 +1,5 @@
 // src/routes/items.js
-import db from '../db.js';
+import db from './db.js';
 import xlsx from 'xlsx';
 
 export function getItems(req, res) {

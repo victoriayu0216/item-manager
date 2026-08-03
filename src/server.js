@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import db from './db.js';
-import { getItems, getItem, createItem, updateItem, deleteItem, exportItems } from './items.js';
+import { getItems, getItem, createItem, updateItem, deleteItem, exportItems, takeItem, getItemLogs } from './items.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,6 +20,8 @@ app.get('/api/items/:id', getItem);
 app.post('/api/items', createItem);
 app.put('/api/items/:id', updateItem);
 app.delete('/api/items/:id', deleteItem); 
+app.post('/api/items/:id/take', takeItem);
+app.get('/api/items/:id/logs', getItemLogs);
 
 // ========== TEST API ==========
 app.get('/api/test', (req, res) => {

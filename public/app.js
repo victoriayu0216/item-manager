@@ -116,6 +116,7 @@ async function renderList() {
               <th>Bill ID</th>
               <th>Item Name</th>
               <th>Author</th>
+              <th>Quantity</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -123,7 +124,7 @@ async function renderList() {
     `;
 
     if (list.length === 0) {
-      html += `<tr><td colspan="5" class="empty">No items found. Add one!</td></tr>`;
+      html += `<tr><td colspan="6" class="empty">No items found. Add one!</td></tr>`;
     } else {
       list.forEach((item) => {
         html += `
@@ -132,7 +133,8 @@ async function renderList() {
             <td>${esc(item.bill_id) || '—'}</td>
             <td>${esc(item.item_name)}</td>
             <td>${esc(item.author) || '—'}</td>
-            <td>${fmt(item.item_date)}</td>
+            <td>${item.quantity || 0}</td>
+            <td>${fmt(item.item_date)}</td>          
           </tr>
         `;
       });
@@ -174,30 +176,74 @@ async function renderDetail() {
 
   try {
     const item = await api.get(`/api/items/${id}`);
+    const logs = await fetchLogs(id);
+
+    // 活動記錄 HTML
+    let logsHtml = '<div class="muted" style="padding:8px 0;">No activity yet.</div>';
+    if (logs.length > 0) {
+      logsHtml = `<ul style="list-style:none; padding:0; margin:0; font-size:13px;">`;
+      logs.forEach(log => {
+        const details = log.details ? JSON.parse(log.details) : {};
+        let detailText = '';
+        if (log.action === 'create') {
+          detailText = `Created item: ${details.item_name || ''}`;
+        } else if (log.action === 'edit') {
+          const changes = Object.keys(details).map(key => `${key}: ${details[key].old} → ${details[key].new}`).join(', ');
+          detailText = `Edited: ${changes}`;
+        } else if (log.action === 'take') {
+  let takeText = `Took ${details.taken || 0} pcs (remaining: ${details.remaining || 0})`;
+  if (details.note) {
+    takeText += ` 📝 ${details.note}`;
+  }
+  detailText = takeText;
+        } else if (log.action === 'delete') {
+          detailText = `Deleted item: ${details.item_name || ''}`;
+        }
+        logsHtml += `
+          <li style="padding:6px 0; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;">
+            <span>
+              <strong style="text-transform:capitalize;">${log.action}</strong>
+              ${detailText}
+              <span class="muted" style="font-size:12px; margin-left:8px;">by ${log.author || 'System'}</span>
+            </span>
+            <span class="muted" style="font-size:12px;">${fmt(log.created_at)}</span>
+          </li>
+        `;
+      });
+      logsHtml += '</ul>';
+    }
 
     const html = `
       <div class="detail-card">
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
           <button class="btn" onclick="showItems()">← Back to list</button>
+          <div>
+            <button class="btn" onclick="openTakeModal(${item.id})">Take</button>
+            <button class="btn primary" onclick="openItemModal(${item.id})">✎ Edit</button>
+          </div>
         </div>
         <div class="detail-header">
           <h2>${esc(item.item_name)}</h2>
-          <div class="actions">
-            <button class="btn primary" onclick="openItemModal(${item.id})">✎ Edit</button>
-          </div>
         </div>
         <div class="detail-grid">
           <div class="field"><span class="label">Item Code</span><span class="value">${esc(item.item_code)}</span></div>
           <div class="field"><span class="label">Bill ID</span><span class="value">${esc(item.bill_id) || '—'}</span></div>
           <div class="field"><span class="label">Author</span><span class="value">${esc(item.author) || '—'}</span></div>
-          <div class="field"><span class="label">Date</span><span class="value">${fmt(item.item_date)}</span></div>
-          <div class="field" style="grid-column:1/-1;">
+          <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>
+          <div class="field"><span class="label">Date</span><span class="value">${fmt(item.item_date)}</span></div>          
+          <div class="field" style="grid-column:1/-1;">       
             <span class="label">Description</span>
             <span class="value">${esc(item.description) || '—'}</span>
           </div>
           <div class="field" style="grid-column:1/-1; color:#94a3b8; font-size:12px; border-top:1px solid #e2e8f0; padding-top:12px; margin-top:4px;">
             Created: ${fmt(item.created_at)} &middot; Updated: ${fmt(item.updated_at)}
           </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div style="margin-top:24px; border-top:1px solid #e2e8f0; padding-top:16px;">
+          <h3 style="font-size:16px; margin-bottom:8px;">📋 Activity History</h3>
+          ${logsHtml}
         </div>
       </div>
     `;
@@ -220,6 +266,7 @@ function openItemModal(id) {
       bill_id: '',
       item_name: '',
       author: '',
+      quantity: 1,
       item_date: new Date().toISOString().slice(0, 10),
       description: '',
     };
@@ -243,11 +290,15 @@ function openItemModal(id) {
           <label>Author</label>
           <input id="f_author" value="${esc(item.author)}" placeholder="Your name" />
         </div>
+        </div>
+        <div class="field">
+          <label>Quantity</label>
+          <input id="f_quantity" type="number" value="${item.quantity || 1}" min="1" />
+        </div>
         <div class="field">
           <label>Date</label>
           <input id="f_item_date" type="date" value="${item.item_date || ''}" />
-        </div>
-      </div>
+        </div>    
       <div class="field" style="grid-column:1/-1;">
         <label>Description</label>
         <textarea id="f_description" rows="3" placeholder="Optional notes...">${esc(item.description)}</textarea>
@@ -285,6 +336,7 @@ async function saveItem(id) {
     bill_id: document.getElementById('f_bill_id').value.trim(),
     item_name: document.getElementById('f_item_name').value.trim(),
     author: document.getElementById('f_author').value.trim() || 'System',
+    quantity: parseInt(document.getElementById('f_quantity').value, 10) || 1,
     item_date: document.getElementById('f_item_date').value,
     description: document.getElementById('f_description').value.trim(),
   };
@@ -353,4 +405,62 @@ function exportExcel() {
   }
   // 直接用瀏覽器下載
   window.location.href = url;
+}
+
+// ============================================================
+//  12. FETCH ACTIVITY LOGS
+// ============================================================
+async function fetchLogs(itemId) {
+  try {
+    return await api.get(`/api/items/${itemId}/logs`);
+  } catch {
+    return [];
+  }
+}
+
+// ============================================================
+//  13. TAKE ITEM (減少數量)
+// ============================================================
+function openTakeModal(id) {
+  const html = `
+    <h3>Take Item</h3>
+    <div class="field">
+      <label>Number of items to take</label>
+      <input id="f_take_quantity" type="number" value="1" min="1" />
+    </div>
+    <div class="field">
+      <label>Author</label>
+      <input id="f_take_author" placeholder="Your name" value="${localStorage.getItem('crm_user') || ''}" />
+    </div>
+    <div class="field">
+      <label>Note (optional)</label>
+      <textarea id="f_take_note" rows="2" placeholder="Remarks"></textarea>
+    </div>
+    <div class="row" style="margin-top:16px;">
+      <button class="btn" onclick="closeOvl()">Cancel</button>
+      <button class="btn primary" onclick="confirmTake(${id})">Confirm Take</button>
+    </div>
+  `;
+  document.getElementById('modal').innerHTML = html;
+  openOvl();
+}
+
+async function confirmTake(id) {
+  const quantity = parseInt(document.getElementById('f_take_quantity').value, 10) || 1;
+  const author = document.getElementById('f_take_author').value.trim() || 'System';
+  const note = document.getElementById('f_take_note').value.trim();
+  
+  if (quantity <= 0) {
+    toast('Please enter a valid quantity');
+    return;
+  }
+
+  try {
+    const result = await api.send('POST', `/api/items/${id}/take`, { quantity, author, note });
+    toast(`Took ${quantity} item(s). Remaining: ${result.quantity}`);
+    closeOvl();
+    await renderDetail(); // 刷新 Detail 頁
+  } catch (err) {
+    toast('Error: ' + err.message);
+  }
 }

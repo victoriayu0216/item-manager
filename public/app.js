@@ -117,14 +117,15 @@ async function renderList() {
               <th>Item Name</th>
               <th>Author</th>
               <th>Quantity</th>
-              <th>Date</th>
+              <th>Start Date</th>
+              <th>Expiry Date</th>
             </tr>
           </thead>
           <tbody>
     `;
 
     if (list.length === 0) {
-      html += `<tr><td colspan="6" class="empty">No items found. Add one!</td></tr>`;
+      html += `<tr><td colspan="7" class="empty">No items found. Add one!</td></tr>`;
     } else {
       list.forEach((item) => {
         html += `
@@ -134,7 +135,8 @@ async function renderList() {
             <td>${esc(item.item_name)}</td>
             <td>${esc(item.author) || '—'}</td>
             <td>${item.quantity || 0}</td>
-            <td>${fmt(item.item_date)}</td>          
+            <td>${fmt(item.start_date)}</td> 
+            <td>${fmt(item.expiry_date)}</td>        
           </tr>
         `;
       });
@@ -229,8 +231,9 @@ async function renderDetail() {
           <div class="field"><span class="label">Item Code</span><span class="value">${esc(item.item_code)}</span></div>
           <div class="field"><span class="label">Bill ID</span><span class="value">${esc(item.bill_id) || '—'}</span></div>
           <div class="field"><span class="label">Author</span><span class="value">${esc(item.author) || '—'}</span></div>
-          <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>
-          <div class="field"><span class="label">Date</span><span class="value">${fmt(item.item_date)}</span></div>          
+          <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>         
+          <div class="field"><span class="label">Start Date</span><span class="value">${fmt(item.start_date)}</span></div>
+          <div class="field"><span class="label">Expiry Date</span><span class="value">${fmt(item.expiry_date)}</span></div>         
           <div class="field" style="grid-column:1/-1;">       
             <span class="label">Description</span>
             <span class="value">${esc(item.description) || '—'}</span>
@@ -267,49 +270,54 @@ function openItemModal(id) {
       item_name: '',
       author: '',
       quantity: 1,
-      item_date: new Date().toISOString().slice(0, 10),
+      expiry_date: '',
+      start_date: new Date().toISOString().slice(0, 10),
       description: '',
     };
 
     const html = `
-      <h3>${isEdit ? '✎ Edit Item' : '➕ Add Item'}</h3>
-      <div class="grid2">
-        <div class="field">
-          <label>Item code *</label>
-          <input id="f_item_code" value="${esc(item.item_code)}" placeholder="e.g. ITEM-001" />
-        </div>
-        <div class="field">
-          <label>Bill ID</label>
-          <input id="f_bill_id" value="${esc(item.bill_id)}"/>
-        </div>
-        <div class="field">
-          <label>Item Name *</label>
-          <input id="f_item_name" value="${esc(item.item_name)}"/>
-        </div>
-        <div class="field">
-          <label>Author</label>
-          <input id="f_author" value="${esc(item.author)}" placeholder="Your name" />
-        </div>
-        </div>
-        <div class="field">
-          <label>Quantity</label>
-          <input id="f_quantity" type="number" value="${item.quantity || 1}" min="1" />
-        </div>
-        <div class="field">
-          <label>Date</label>
-          <input id="f_item_date" type="date" value="${item.item_date || ''}" />
-        </div>    
-      <div class="field" style="grid-column:1/-1;">
-        <label>Description</label>
-        <textarea id="f_description" rows="3" placeholder="Optional notes...">${esc(item.description)}</textarea>
-      </div>
-      <div class="row">
-        ${isEdit ? `<button class="btn danger" onclick="deleteItem(${id})">Delete</button>` : ''}
-        <div style="flex:1;"></div>
-        <button class="btn" onclick="closeOvl()">Cancel</button>
-        <button class="btn primary" onclick="saveItem(${id || 'null'})">Save</button>
-      </div>
-    `;
+  <h3>${isEdit ? '✎ Edit Item' : '➕ Add Item'}</h3>
+  <div class="grid2">
+    <div class="field">
+      <label>Item code *</label>
+      <input id="f_item_code" value="${esc(item.item_code)}" placeholder="e.g. ITEM-001" />
+    </div>
+    <div class="field">
+      <label>Bill ID</label>
+      <input id="f_bill_id" value="${esc(item.bill_id)}"/>
+    </div>
+    <div class="field">
+      <label>Item Name *</label>
+      <input id="f_item_name" value="${esc(item.item_name)}"/>
+    </div>
+    <div class="field">
+      <label>Author</label>
+      <input id="f_author" value="${esc(item.author)}" placeholder="Your name" />
+    </div>
+    <div class="field">
+      <label>Quantity</label>
+      <input id="f_quantity" type="number" value="${item.quantity || 1}" min="1" />
+    </div>
+    <div class="field">
+      <label>Start Date</label>
+      <input id="f_start_date" type="date" value="${item.start_date || ''}" />
+    </div>
+    <div class="field">
+      <label>Expiry Date</label>
+      <input id="f_expiry_date" type="date" value="${item.expiry_date || ''}" />
+    </div>
+  </div>
+  <div class="field" style="grid-column:1/-1;">
+    <label>Description</label>
+    <textarea id="f_description" rows="3" placeholder="Optional notes...">${esc(item.description)}</textarea>
+  </div>
+  <div class="row">
+    ${isEdit ? `<button class="btn danger" onclick="deleteItem(${id})">Delete</button>` : ''}
+    <div style="flex:1;"></div>
+    <button class="btn" onclick="closeOvl()">Cancel</button>
+    <button class="btn primary" onclick="saveItem(${id || 'null'})">Save</button>
+  </div>
+`;
 
     document.getElementById('modal').innerHTML = html;
     openOvl();
@@ -337,7 +345,8 @@ async function saveItem(id) {
     item_name: document.getElementById('f_item_name').value.trim(),
     author: document.getElementById('f_author').value.trim() || 'System',
     quantity: parseInt(document.getElementById('f_quantity').value, 10) || 1,
-    item_date: document.getElementById('f_item_date').value,
+    start_date: document.getElementById('f_start_date').value,
+    expiry_date: document.getElementById('f_expiry_date').value, 
     description: document.getElementById('f_description').value.trim(),
   };
 

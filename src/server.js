@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
   if (req.session.user) {
     res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
   } else {
-    res.redirect('login.html');
+    res.redirect('/login.html');
   }
 });
 

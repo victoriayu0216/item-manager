@@ -228,46 +228,51 @@ async function renderDetail() {
       logsHtml += `</ul>`;
     }
 
-    const html = `
-      <div class="detail-card">
-        <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <button class="btn" onclick="showItems()">← Back to list</button>
-          <div>
-            <button class="btn" onclick="openTakeModal(${item.id})">Take</button>
-            <button class="btn primary" onclick="openItemModal(${item.id})">✎ Edit</button>
-          </div>
-        </div>
+   const html = `
+  <div class="detail-page">
+    <!-- Back to list → Return -->
+    <div class="detail-topbar">
+      <button class="btn" onclick="showItems()">← Back to list</button>     
+    </div>
 
-        <div class="detail-header">
-          <h2>${esc(item.item_name)}</h2>
-        </div>
+     <!-- title and edit (same line) -->
+    <div class="detail-header-row">
+      <h2 class="detail-title">${esc(item.item_name)}</h2>
+      <div class="detail-actions">
+        <button class="btn" onclick="openTakeModal(${item.id})">Take</button>
+        <button class="btn primary" onclick="openItemModal(${item.id})">✎ Edit</button>
+      </div>
+    </div>
 
-        <div class="detail-grid">
-          <div class="field"><span class="label">Item Code</span><span class="value">${esc(item.item_code)}</span></div>
-          <div class="field"><span class="label">Bill ID</span><span class="value">${esc(item.bill_id) || '—'}</span></div>
-          <div class="field"><span class="label">Author</span><span class="value">${esc(item.author) || '—'}</span></div>
-          <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>
-          <div class="field"><span class="label">Start Date</span><span class="value">${fmt(item.start_date)}</span></div>
-          <div class="field"><span class="label">Expiry Date</span><span class="value">${fmt(item.expiry_date)}</span></div>
-          <div class="field" style="grid-column:1/-1;">
-            <span class="label">Description</span>
-            <span class="value">${esc(item.description) || '—'}</span>
-          </div>
-          <div class="field" style="grid-column:1/-1; color:#94a3b8; font-size:12px; border-top:1px solid #e2e8f0; padding-top:12px; margin-top:4px;">
-            Created: ${fmt(item.created_at)} &middot; Updated: ${fmt(item.updated_at)}
-          </div>
+    <!-- detail（Board） -->
+    <div class="detail-board">
+      <div class="detail-grid">
+        <div class="field"><span class="label">Item Code</span><span class="value">${esc(item.item_code)}</span></div>
+        <div class="field"><span class="label">Bill ID</span><span class="value">${esc(item.bill_id) || '—'}</span></div>
+        <div class="field"><span class="label">Author</span><span class="value">${esc(item.author) || '—'}</span></div>
+        <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>
+        <div class="field"><span class="label">Start Date</span><span class="value">${fmt(item.start_date)}</span></div>
+        <div class="field"><span class="label">Expiry Date</span><span class="value">${fmt(item.expiry_date)}</span></div>
+        <div class="field full-width">
+          <span class="label">Description</span>
+          <span class="value">${esc(item.description) || '—'}</span>
         </div>
-
-        <!-- ===== ACTIVITY LOG ===== -->
-        <div class="activity-log">
-          <div class="log-header">
-            <h3>📋 Activity History</h3>
-            <span class="log-count">${logs.length} entries</span>
-          </div>
-          ${logsHtml}
+        <div class="field full-width meta">
+          Created: ${fmt(item.created_at)} &middot; Updated: ${fmt(item.updated_at)}
         </div>
       </div>
-    `;
+    </div>
+
+    <!-- Activity Log -->
+    <div class="activity-log">
+      <div class="log-header">
+        <h3>📋 Activity History</h3>
+        <span class="log-count">${logs.length} entries</span>
+      </div>
+      ${logsHtml}
+    </div>
+  </div>
+`;
 
     v.innerHTML = html;
   } catch (err) {

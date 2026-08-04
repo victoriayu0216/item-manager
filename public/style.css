@@ -527,3 +527,102 @@ tbody tr:hover {
   border-radius: 8px;
   border: 1px dashed #e2e8f0;
 }
+
+/* ===== DETAIL PAGE LAYOUT ===== */
+.detail-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.detail-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #0f172a;
+}
+
+/* ===== DETAIL BOARD (卡片) ===== */
+.detail-board {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  margin-bottom: 24px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 32px;
+}
+
+.detail-grid .field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-grid .field .label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.detail-grid .field .value {
+  font-size: 15px;
+  color: #1e293b;
+  padding: 4px 0;
+}
+
+.detail-grid .field.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-grid .field.meta {
+  color: #94a3b8;
+  font-size: 12px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+/* ===== DETAIL HEADER ROW ===== */
+.detail-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.detail-header-row .detail-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: #0f172a;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.detail-header-row .detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}

@@ -1,0 +1,26 @@
+/* Login page*/
+:root{
+  --bg:#f6f7f9;--panel:#fff;--ink:#1f2430;--muted:#6b7280;--line:#e6e8ec;
+  --brand:#2f6df0;--brand-soft:#eaf1ff;--danger:#dc2626;--radius:10px;
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang HK","Microsoft JhengHei",sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;
+  display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;
+}
+.login-page{width:100%;max-width:380px}
+.login-card{background:var(--panel);border-radius:14px;padding:32px 28px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.login-brand{font-weight:700;font-size:20px;text-align:center;margin-bottom:2px}
+.login-sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:28px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--ink);margin-bottom:5px}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);transition:border-color .15s,box-shadow .15s}
+.field input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);background:var(--panel)}
+.login-error{background:#fdecec;color:var(--danger);border-radius:8px;padding:9px 12px;font-size:13px;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500}
+.btn:hover{background:var(--bg)}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}.btn.primary:hover{background:#235bd6}
+.btn.primary:disabled{opacity:.6;cursor:default}
+.btn-block{width:100%;padding:10px 14px;font-size:14px;margin-top:4px}
+/* responsive */
+@media(max-width:440px){.login-card{padding:24px 18px}}

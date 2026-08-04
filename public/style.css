@@ -451,3 +451,79 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== ACTIVITY LOG ===== */
+.activity-log {
+  margin-top: 24px;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 16px;
+}
+
+.activity-log .log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.activity-log .log-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #0f172a;
+}
+
+.activity-log .log-header .log-count {
+  font-size: 12px;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+/* ===== ACTIVITY LOG LIST ===== */
+.log-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.log-list .log-item {
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.log-list .log-item:last-child {
+  border-bottom: none;
+}
+
+.log-list .log-meta {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.log-list .log-meta .log-time {
+  font-weight: 500;
+}
+
+.log-list .log-meta .log-author {
+  color: #94a3b8;
+}
+
+.log-list .log-text {
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+/* ===== EMPTY STATE ===== */
+.log-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #e2e8f0;
+}

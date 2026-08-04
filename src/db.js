@@ -1,7 +1,7 @@
-// src/db.js
 import Database from 'better-sqlite3';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import bcrypt from 'bcrypt';  
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, '..', 'data', 'items.db');
@@ -11,6 +11,26 @@ const db = new Database(dbPath);
 // 啟用 Foreign Key 約束
 db.pragma('foreign_keys = ON');
 
+// 建立 users 表（如果未存在）
+db.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  display_name TEXT NOT NULL DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'staff' CHECK(role IN ('admin','manager','staff','viewer')),
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS user_branches (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  branch_id INTEGER NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, branch_id)
+);
+
+`);
+
 // 建立 items 表（如果未存在）
 db.exec(`
   CREATE TABLE IF NOT EXISTS items (
@@ -19,7 +39,8 @@ db.exec(`
     bill_id TEXT,
     item_name TEXT NOT NULL,
     author TEXT,
-    item_date TEXT,
+    start_date TEXT,
+    expiry_date TEXT,
     description TEXT,
     quantity INTEGER DEFAULT 1,
     created_at TEXT DEFAULT (datetime('now')),
@@ -49,6 +70,35 @@ db.exec(`
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
   )
 `);
+
+// ===== SEED ADMIN USER =====
+try {
+  const userCount = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+  if (userCount === 0) {
+    // 檢查 users 表有咩欄位（自動適應）
+    const tableInfo = db.prepare('PRAGMA table_info(users)').all();
+    const hasPasswordHash = tableInfo.some(col => col.name === 'password_hash');
+    const hasPassword = tableInfo.some(col => col.name === 'password');
+    const hasIsActive = tableInfo.some(col => col.name === 'is_active');
+
+    const hash = bcrypt.hashSync('admin123', 10);
+    const passwordField = hasPasswordHash ? 'password_hash' : 'password';
+
+    let sql = `INSERT INTO users (username, ${passwordField}, display_name, role`;
+    let values = `'admin', '${hash}', 'Administrator', 'admin'`;
+
+    if (hasIsActive) {
+      sql += `, is_active`;
+      values += `, 1`;
+    }
+    sql += `) VALUES (${values})`;
+
+    db.prepare(sql).run();
+    console.log(`✅ Seeded admin user (admin / admin123) using field: ${passwordField}`);
+  }
+} catch (err) {
+  console.warn('⚠️ Seed admin skipped (users table might not exist yet):', err.message);
+}
 
 console.log('✅ Database connected and tables ready');
 export default db;

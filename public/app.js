@@ -1,5 +1,31 @@
 // ============================================================
-//  1. API HELPER
+//  AUTH
+// ============================================================
+let currentUser = null;
+
+async function checkSession() {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (!res.ok) {
+      window.location.href = '/login.html';
+      return;
+    }
+    currentUser = await res.json();
+const userEl = document.getElementById('userDisplay');
+if (userEl && currentUser) {
+    userEl.textContent = currentUser.display_name || currentUser.username;
+}  } catch {
+    window.location.href = '/login.html';
+  }
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.href = '/login.html';
+}
+
+// ============================================================
+//  API HELPER
 // ============================================================
 const api = {
   async get(url) {
@@ -19,16 +45,11 @@ const api = {
 };
 
 // ============================================================
-//  2. UTILITY FUNCTIONS
+//  UTILITY
 // ============================================================
 function esc(s) {
   if (s == null) return '';
-  return String(s).replace(/[&<>"]/g, (c) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-  }[c]));
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 function fmt(iso) {
@@ -55,7 +76,7 @@ function toast(msg) {
 }
 
 // ============================================================
-//  3. MODAL CONTROL
+//  MODAL
 // ============================================================
 function openOvl() {
   document.getElementById('ovl').classList.add('show');
@@ -63,29 +84,25 @@ function openOvl() {
 function closeOvl() {
   document.getElementById('ovl').classList.remove('show');
 }
-// 點擊 overlay 背景關閉
 document.getElementById('ovl')?.addEventListener('click', (e) => {
   if (e.target.id === 'ovl') closeOvl();
 });
-// ESC 鍵關閉
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeOvl();
 });
 
 // ============================================================
-//  4. STATE
+//  STATE
 // ============================================================
-let currentItemId = null; // 用於 Detail 頁
+let currentItemId = null;
 let searchTimeout = null;
 
 // ============================================================
-//  5. LIST VIEW
+//  LIST VIEW
 // ============================================================
 async function showItems() {
-  // 更新導航高亮
   document.querySelectorAll('.nav button').forEach((b) => b.classList.remove('active'));
   document.getElementById('nav-items')?.classList.add('active');
-
   document.getElementById('title').textContent = 'Items';
   document.getElementById('searchWrap').style.display = 'flex';
   currentItemId = null;
@@ -104,7 +121,6 @@ async function renderList() {
         <div>
           <button class="btn primary" onclick="openItemModal(null)">➕ Add Item</button>
           <button class="btn" onclick="exportExcel()">↓ Export Excel</button>
-
         </div>
         <span class="muted">${list.length} items</span>
       </div>
@@ -135,33 +151,27 @@ async function renderList() {
             <td>${esc(item.item_name)}</td>
             <td>${esc(item.author) || '—'}</td>
             <td>${item.quantity || 0}</td>
-            <td>${fmt(item.start_date)}</td> 
-            <td>${fmt(item.expiry_date)}</td>        
+            <td>${fmt(item.start_date)}</td>
+            <td>${fmt(item.expiry_date)}</td>
           </tr>
         `;
       });
     }
 
-    html += `
-          </tbody>
-        </table>
-      </div>
-    `;
-
+    html += `</tbody></table></div>`;
     v.innerHTML = html;
   } catch (err) {
     v.innerHTML = `<div class="card" style="padding:20px;color:red;">❌ Error: ${err.message}</div>`;
   }
 }
 
-// 搜尋 debounce
 function searchItems() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(renderList, 300);
 }
 
 // ============================================================
-//  6. DETAIL VIEW
+//  DETAIL VIEW
 // ============================================================
 async function openDetail(id) {
   currentItemId = id;
@@ -180,39 +190,42 @@ async function renderDetail() {
     const item = await api.get(`/api/items/${id}`);
     const logs = await fetchLogs(id);
 
-    // 活動記錄 HTML
-    let logsHtml = '<div class="muted" style="padding:8px 0;">No activity yet.</div>';
-    if (logs.length > 0) {
-      logsHtml = `<ul style="list-style:none; padding:0; margin:0; font-size:13px;">`;
+    // ===== ACTIVITY LOG (CRM 風格，只顯示自動記錄) =====
+    let logsHtml = '';
+    if (logs.length === 0) {
+      logsHtml = `<div class="log-empty">No activity yet.</div>`;
+    } else {
+      logsHtml = `<ul class="log-list">`;
       logs.forEach(log => {
         const details = log.details ? JSON.parse(log.details) : {};
         let detailText = '';
+
         if (log.action === 'create') {
           detailText = `Created item: ${details.item_name || ''}`;
         } else if (log.action === 'edit') {
-          const changes = Object.keys(details).map(key => `${key}: ${details[key].old} → ${details[key].new}`).join(', ');
+          const changes = Object.keys(details).map(key =>
+            `${key}: ${details[key].old} → ${details[key].new}`
+          ).join(', ');
           detailText = `Edited: ${changes}`;
         } else if (log.action === 'take') {
-  let takeText = `Took ${details.taken || 0} pcs (remaining: ${details.remaining || 0})`;
-  if (details.note) {
-    takeText += ` 📝 ${details.note}`;
-  }
-  detailText = takeText;
+          let takeText = `Took ${details.taken || 0} pcs (remaining: ${details.remaining || 0})`;
+          if (details.note) takeText += ` — ${details.note}`;
+          detailText = takeText;
         } else if (log.action === 'delete') {
           detailText = `Deleted item: ${details.item_name || ''}`;
         }
+
         logsHtml += `
-          <li style="padding:6px 0; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;">
-            <span>
-              <strong style="text-transform:capitalize;">${log.action}</strong>
-              ${detailText}
-              <span class="muted" style="font-size:12px; margin-left:8px;">by ${log.author || 'System'}</span>
-            </span>
-            <span class="muted" style="font-size:12px;">${fmt(log.created_at)}</span>
+          <li class="log-item">
+            <div class="log-meta">
+              <span class="log-time">${fmt(log.created_at)}</span>
+              <span class="log-author">· ${log.author || 'System'}</span>
+            </div>
+            <div class="log-text">${detailText}</div>
           </li>
         `;
       });
-      logsHtml += '</ul>';
+      logsHtml += `</ul>`;
     }
 
     const html = `
@@ -224,17 +237,19 @@ async function renderDetail() {
             <button class="btn primary" onclick="openItemModal(${item.id})">✎ Edit</button>
           </div>
         </div>
+
         <div class="detail-header">
           <h2>${esc(item.item_name)}</h2>
         </div>
+
         <div class="detail-grid">
           <div class="field"><span class="label">Item Code</span><span class="value">${esc(item.item_code)}</span></div>
           <div class="field"><span class="label">Bill ID</span><span class="value">${esc(item.bill_id) || '—'}</span></div>
           <div class="field"><span class="label">Author</span><span class="value">${esc(item.author) || '—'}</span></div>
-          <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>         
+          <div class="field"><span class="label">Quantity</span><span class="value">${item.quantity || 0}</span></div>
           <div class="field"><span class="label">Start Date</span><span class="value">${fmt(item.start_date)}</span></div>
-          <div class="field"><span class="label">Expiry Date</span><span class="value">${fmt(item.expiry_date)}</span></div>         
-          <div class="field" style="grid-column:1/-1;">       
+          <div class="field"><span class="label">Expiry Date</span><span class="value">${fmt(item.expiry_date)}</span></div>
+          <div class="field" style="grid-column:1/-1;">
             <span class="label">Description</span>
             <span class="value">${esc(item.description) || '—'}</span>
           </div>
@@ -243,9 +258,12 @@ async function renderDetail() {
           </div>
         </div>
 
-        <!-- Activity Log -->
-        <div style="margin-top:24px; border-top:1px solid #e2e8f0; padding-top:16px;">
-          <h3 style="font-size:16px; margin-bottom:8px;">📋 Activity History</h3>
+        <!-- ===== ACTIVITY LOG ===== -->
+        <div class="activity-log">
+          <div class="log-header">
+            <h3>📋 Activity History</h3>
+            <span class="log-count">${logs.length} entries</span>
+          </div>
           ${logsHtml}
         </div>
       </div>
@@ -258,7 +276,7 @@ async function renderDetail() {
 }
 
 // ============================================================
-//  7. ADD / EDIT MODAL
+//  ADD / EDIT MODAL
 // ============================================================
 function openItemModal(id) {
   const isEdit = !!id;
@@ -270,54 +288,54 @@ function openItemModal(id) {
       item_name: '',
       author: '',
       quantity: 1,
-      expiry_date: '',
       start_date: new Date().toISOString().slice(0, 10),
+      expiry_date: '',
       description: '',
     };
 
     const html = `
-  <h3>${isEdit ? '✎ Edit Item' : '➕ Add Item'}</h3>
-  <div class="grid2">
-    <div class="field">
-      <label>Item code *</label>
-      <input id="f_item_code" value="${esc(item.item_code)}" placeholder="e.g. ITEM-001" />
-    </div>
-    <div class="field">
-      <label>Bill ID</label>
-      <input id="f_bill_id" value="${esc(item.bill_id)}"/>
-    </div>
-    <div class="field">
-      <label>Item Name *</label>
-      <input id="f_item_name" value="${esc(item.item_name)}"/>
-    </div>
-    <div class="field">
-      <label>Author</label>
-      <input id="f_author" value="${esc(item.author)}" placeholder="Your name" />
-    </div>
-    <div class="field">
-      <label>Quantity</label>
-      <input id="f_quantity" type="number" value="${item.quantity || 1}" min="1" />
-    </div>
-    <div class="field">
-      <label>Start Date</label>
-      <input id="f_start_date" type="date" value="${item.start_date || ''}" />
-    </div>
-    <div class="field">
-      <label>Expiry Date</label>
-      <input id="f_expiry_date" type="date" value="${item.expiry_date || ''}" />
-    </div>
-  </div>
-  <div class="field" style="grid-column:1/-1;">
-    <label>Description</label>
-    <textarea id="f_description" rows="3" placeholder="Optional notes...">${esc(item.description)}</textarea>
-  </div>
-  <div class="row">
-    ${isEdit ? `<button class="btn danger" onclick="deleteItem(${id})">Delete</button>` : ''}
-    <div style="flex:1;"></div>
-    <button class="btn" onclick="closeOvl()">Cancel</button>
-    <button class="btn primary" onclick="saveItem(${id || 'null'})">Save</button>
-  </div>
-`;
+      <h3>${isEdit ? '✎ Edit Item' : '➕ Add Item'}</h3>
+      <div class="grid2">
+        <div class="field">
+          <label>Item Code *</label>
+          <input id="f_item_code" value="${esc(item.item_code)}" placeholder="e.g. ITEM-001" />
+        </div>
+        <div class="field">
+          <label>Bill ID</label>
+          <input id="f_bill_id" value="${esc(item.bill_id)}" />
+        </div>
+        <div class="field">
+          <label>Item Name *</label>
+          <input id="f_item_name" value="${esc(item.item_name)}" />
+        </div>
+        <div class="field">
+          <label>Author</label>
+          <input id="f_author" value="${esc(item.author)}" placeholder="Your name" />
+        </div>
+        <div class="field">
+          <label>Quantity</label>
+          <input id="f_quantity" type="number" value="${item.quantity || 1}" min="1" />
+        </div>
+        <div class="field">
+          <label>Start Date</label>
+          <input id="f_start_date" type="date" value="${item.start_date || ''}" />
+        </div>
+        <div class="field">
+          <label>Expiry Date</label>
+          <input id="f_expiry_date" type="date" value="${item.expiry_date || ''}" />
+        </div>
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Description</label>
+        <textarea id="f_description" rows="3" placeholder="Optional notes...">${esc(item.description)}</textarea>
+      </div>
+      <div class="row">
+        ${isEdit ? `<button class="btn danger" onclick="deleteItem(${id})">Delete</button>` : ''}
+        <div style="flex:1;"></div>
+        <button class="btn" onclick="closeOvl()">Cancel</button>
+        <button class="btn primary" onclick="saveItem(${id || 'null'})">Save</button>
+      </div>
+    `;
 
     document.getElementById('modal').innerHTML = html;
     openOvl();
@@ -334,7 +352,7 @@ function openItemModal(id) {
 }
 
 // ============================================================
-//  8. SAVE ITEM (Add / Edit)
+//  SAVE ITEM
 // ============================================================
 async function saveItem(id) {
   const isEdit = id !== null && id !== 'null';
@@ -346,13 +364,12 @@ async function saveItem(id) {
     author: document.getElementById('f_author').value.trim() || 'System',
     quantity: parseInt(document.getElementById('f_quantity').value, 10) || 1,
     start_date: document.getElementById('f_start_date').value,
-    expiry_date: document.getElementById('f_expiry_date').value, 
+    expiry_date: document.getElementById('f_expiry_date').value,
     description: document.getElementById('f_description').value.trim(),
   };
 
-  // 驗證必填
   if (!body.item_code || !body.item_name) {
-    toast('Uni Key and Item Name are required');
+    toast('Item Code and Item Name are required');
     return;
   }
 
@@ -363,7 +380,6 @@ async function saveItem(id) {
     } else {
       const newItem = await api.send('POST', '/api/items', body);
       toast('Item added!');
-      // 如果係新增，跳去新 item 嘅 detail
       currentItemId = newItem.id;
       closeOvl();
       await renderDetail();
@@ -381,7 +397,7 @@ async function saveItem(id) {
 }
 
 // ============================================================
-//  9. DELETE ITEM
+//  DELETE ITEM
 // ============================================================
 async function deleteItem(id) {
   if (!confirm('Delete this item? This cannot be undone.')) return;
@@ -397,27 +413,17 @@ async function deleteItem(id) {
 }
 
 // ============================================================
-//  10. INIT - Load items on page load
+//  EXPORT EXCEL
 // ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  showItems();
-});
-
-// ============================================================
-//  11. EXPORT EXCEL
-// ==========================x==================================
 function exportExcel() {
   const q = document.getElementById('search').value.trim();
   let url = '/api/items/export';
-  if (q) {
-    url += `?q=${encodeURIComponent(q)}`;
-  }
-  // 直接用瀏覽器下載
+  if (q) url += `?q=${encodeURIComponent(q)}`;
   window.location.href = url;
 }
 
 // ============================================================
-//  12. FETCH ACTIVITY LOGS
+//  FETCH LOGS
 // ============================================================
 async function fetchLogs(itemId) {
   try {
@@ -428,7 +434,7 @@ async function fetchLogs(itemId) {
 }
 
 // ============================================================
-//  13. TAKE ITEM (減少數量)
+//  TAKE ITEM
 // ============================================================
 function openTakeModal(id) {
   const html = `
@@ -458,7 +464,7 @@ async function confirmTake(id) {
   const quantity = parseInt(document.getElementById('f_take_quantity').value, 10) || 1;
   const author = document.getElementById('f_take_author').value.trim() || 'System';
   const note = document.getElementById('f_take_note').value.trim();
-  
+
   if (quantity <= 0) {
     toast('Please enter a valid quantity');
     return;
@@ -468,8 +474,16 @@ async function confirmTake(id) {
     const result = await api.send('POST', `/api/items/${id}/take`, { quantity, author, note });
     toast(`Took ${quantity} item(s). Remaining: ${result.quantity}`);
     closeOvl();
-    await renderDetail(); // 刷新 Detail 頁
+    await renderDetail();
   } catch (err) {
     toast('Error: ' + err.message);
   }
 }
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkSession();
+  showItems();
+});

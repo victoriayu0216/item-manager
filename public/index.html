@@ -8,16 +8,18 @@
 </head>
 <body>
   <div class="app">
+
     <!-- ===== SIDEBAR ===== -->
     <aside class="side">
       <div class="brand">Item<span> Manager</span></div>
       <div class="nav">
         <button id="nav-items" class="active" onclick="showItems()">📋 All Items</button>
-        <button onclick="openItemModal(null)">➕ Add Item</button>
+        <button onclick="openItemModal(null)">➕ Add Item</button>       
       </div>
       <div class="side-foot">
-        <div id="stat"></div>
-      </div>
+      <button class="btn" style="width:100%;margin-bottom:6px" onclick="logout()">🚪 Logout</button>
+       <div id="stat"></div>
+    </div>
     </aside>
 
     <!-- ===== MAIN CONTENT ===== -->
@@ -37,7 +39,7 @@
     </main>
   </div>
 
-  <!-- ===== MODAL (共用彈窗) ===== -->
+  <!-- ===== MODAL ===== -->
   <div class="ovl" id="ovl">
     <div class="modal" id="modal"></div>
   </div>
